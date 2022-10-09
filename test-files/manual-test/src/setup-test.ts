@@ -1,4 +1,4 @@
-import {runShellCommand} from 'augment-vir/dist/cjs/node-only';
+import {interpolationSafeWindowsPath, runShellCommand} from 'augment-vir/dist/cjs/node-only';
 import {rename} from 'fs/promises';
 import {dirname, join, relative} from 'path';
 
@@ -19,10 +19,15 @@ async function setupTest() {
     const newName = join(repoToTestDirPath, 'packed.tgz');
     await rename(join(repoToTestDirPath, parsedOutput.filename), newName);
 
-    await runShellCommand(`npm install ${relative(manualTestDir, newName)} --no-package-lock`, {
-        cwd: manualTestDir,
-        rejectOnError: true,
-    });
+    await runShellCommand(
+        `npm install ${interpolationSafeWindowsPath(
+            relative(manualTestDir, newName),
+        )} --no-package-lock`,
+        {
+            cwd: manualTestDir,
+            rejectOnError: true,
+        },
+    );
 }
 
 setupTest();
