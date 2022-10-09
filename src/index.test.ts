@@ -1,5 +1,5 @@
 import {removeColor} from 'augment-vir';
-import {runShellCommand} from 'augment-vir/dist/cjs/node-only';
+import {runShellCommand, toPosixPath} from 'augment-vir/dist/cjs/node-only';
 import {assert} from 'chai';
 import {dirname} from 'path';
 
@@ -11,15 +11,17 @@ describe(__filename, () => {
             cwd: repoDirPath,
         });
 
-        const filteredOutput = removeColor(
-            output.stdout
-                .replace(
-                    /(?:.|\n)+ts-node \.\/src\/setup-test\.ts && mocha --config \.mocharc\.js --sort --parallel=false[\s\n]+/,
-                    '',
-                )
-                .replace(/^      at .+$/gm, '')
-                .replace(/\s*\([\d.]+m?s\)\s*/, ''),
-        ).trim();
+        const filteredOutput = toPosixPath(
+            removeColor(
+                output.stdout
+                    .replace(
+                        /(?:.|\n)+ts-node \.\/src\/setup-test\.ts && mocha --config \.mocharc\.js --sort --parallel=false[\s\n]+/,
+                        '',
+                    )
+                    .replace(/^      at .+$/gm, '')
+                    .replace(/\s*\([\d.]+m?s\)\s*/, ''),
+            ).trim(),
+        );
 
         assert.strictEqual(output.stderr, '', 'stderr mismatch');
         assert.strictEqual(filteredOutput, expectedOutput, 'stdout mismatch');
