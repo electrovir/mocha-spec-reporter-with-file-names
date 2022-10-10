@@ -34,4 +34,4 @@ npx mocha --reporter './node_modules/mocha-spec-reporter-with-file-names'
 
 # Dev
 
-There are currently no automated tests. Run `npm test` to go through the manual test.
+Tests currently aren't very robust, but you can run `npm test` to run them. They at least pass in GitHub Actions for each major OS so that's nice.
