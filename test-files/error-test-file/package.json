@@ -1,8 +1,8 @@
 {
-    "name": "manual-test",
+    "name": "error-test-file",
     "private": true,
     "scripts": {
-        "test": "ts-node ./src/setup-test.ts && mocha --config .mocharc.js --sort --parallel=false"
+        "test": "ts-node ./src/setup-test.ts && mocha --sort --parallel=false --config mocha.config.js"
     },
     "dependencies": {
         "mocha-spec-reporter-with-file-names": "file:../../packed.tgz"

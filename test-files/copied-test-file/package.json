@@ -1,0 +1,11 @@
+{
+    "name": "copied-test-file",
+    "private": true,
+    "scripts": {
+        "debug": "ts-node ./src/setup-test.ts && mocha  --sort --parallel=false --mocha-spec-with-name-debug --config mocha.config.js",
+        "test": "ts-node ./src/setup-test.ts && mocha  --sort --parallel=false --config mocha.config.js"
+    },
+    "dependencies": {
+        "mocha-spec-reporter-with-file-names": "file:../../packed.tgz"
+    }
+}

@@ -47,6 +47,14 @@ const {
 const {EVENT_SUITE_ADD_TEST} = Suite.constants;
 const baseColors = Base.colors;
 
+const debug = process.argv.includes('--mocha-spec-with-name-debug');
+
+function debugLog(...args: any[]): void {
+    if (debug) {
+        console.info(...args);
+    }
+}
+
 const extraColors: Record<string, number | string> = {
     fileName: 7,
 };
@@ -66,11 +74,17 @@ function stringifyDiffObjs(err: any) {
     }
 }
 
+type ActualSuiteWithFile = {
+    id: string | undefined;
+    file: string | undefined;
+} & WithMochaId &
+    Suite;
+
 const mochaIdKey = '__mocha_id__';
 
-type WithMochaId<T extends object | unknown = unknown> = T extends unknown
-    ? Record<typeof mochaIdKey, string>
-    : Record<typeof mochaIdKey, string> & T;
+type WithMochaId<T extends object | unknown = unknown> = T extends object
+    ? Record<typeof mochaIdKey, string> & T
+    : Record<typeof mochaIdKey, string>;
 
 export class SpecReporterWithFileNames extends Base {
     // use this to easily get a path to this file so it can be handed to Mocha in a config file
@@ -88,65 +102,91 @@ export class SpecReporterWithFileNames extends Base {
 
         const loggedFiles = new Set();
         const loggedSuites = new Set();
-        const suites = new Map();
+        const suites = new Map<string, ActualSuiteWithFile>();
+
+        function logTestSuite(suite: ActualSuiteWithFile, test: WithMochaId<Test>) {
+            if (!suite.file) {
+                suite.file = test.file;
+            }
+            if (!suite.id) {
+                suite.id = suite[mochaIdKey];
+            }
+            const suiteParent = suite.parent;
+
+            const isTopDescribe = !suiteParent?.parent;
+            if (isTopDescribe && !loggedFiles.has(suite.file)) {
+                loggedFiles.add(suite.file);
+                Base.consoleLog();
+                indents = 0;
+                Base.consoleLog(
+                    color('fileName', '%s%s'),
+                    indent(),
+                    relative(process.cwd(), suite.file ?? ''),
+                );
+                indents++;
+            } else if (!isTopDescribe && suiteParent) {
+                logTestSuite(suiteParent as ActualSuiteWithFile, test);
+            }
+
+            if (!loggedSuites.has(suite.id)) {
+                Base.consoleLog(color('suite', '%s%s'), indent(), suite.title);
+                loggedSuites.add(suite.id);
+                indents++;
+            }
+        }
 
         runner
             .on(EVENT_SUITE_ADD_TEST, (test) => {
-                const suite = suites.get((test.parent as WithMochaId | undefined)?.[mochaIdKey]);
-
-                if (!suite.file) {
-                    suite.file = test.file;
-                }
-                if (!suite.id) {
-                    suite.id = suite[mochaIdKey];
-                }
-                if (!loggedFiles.has(suite.file)) {
-                    loggedFiles.add(suite.file);
-                    Base.consoleLog();
-                    indents = 0;
-                    Base.consoleLog(
-                        color('fileName', '%s%s'),
-                        indent(),
-                        relative(process.cwd(), suite.file),
-                    );
-                    indents++;
+                debugLog(`====================================== EVENT_SUITE_ADD_TEST`);
+                debugLog({test, id: (test as any)[mochaIdKey]});
+                const suite = suites.get(
+                    (test.parent as WithMochaId<Test> | undefined)?.[mochaIdKey] ?? '',
+                );
+                if (!suite) {
+                    return;
                 }
 
-                if (!loggedSuites.has(suite.id)) {
-                    Base.consoleLog(color('suite', '%s%s'), indent(), suite.title);
-                    loggedSuites.add(suite.id);
-                    indents++;
-                }
+                logTestSuite(suite, test as WithMochaId<Test>);
             })
             .on(EVENT_SUITE_BEGIN, (suite) => {
-                suites.set((suite as unknown as WithMochaId<Suite>)[mochaIdKey], suite);
+                debugLog(`====================================== EVENT_SUITE_BEGIN`);
+                debugLog({suite, id: (suite as any)[mochaIdKey]});
+                // only add file names to the top most level suite
+                suites.set((suite as unknown as WithMochaId<Suite>)[mochaIdKey], suite as any);
             })
             .on(EVENT_SUITE_END, () => {
+                debugLog(`====================================== EVENT_SUITE_END`);
                 --indents;
             })
             .on(EVENT_TEST_PENDING, (test) => {
+                debugLog(`====================================== EVENT_TEST_PENDING`);
+                debugLog({test, id: (test as any)[mochaIdKey]});
                 Base.consoleLog(indent() + color('pending', '  - %s'), test.title);
             })
             .on(EVENT_TEST_PASS, (test) => {
+                debugLog(`====================================== EVENT_TEST_PASS`);
+                debugLog({test, id: (test as any)[mochaIdKey]});
                 if (test.speed === 'fast') {
                     const format =
-                        indent() +
-                        color('checkmark', '  ' + Base.symbols.ok) +
-                        color('pass', ' %s');
+                        indent() + color('checkmark', ' ' + Base.symbols.ok) + color('pass', ' %s');
                     Base.consoleLog(format, test.title);
                 } else {
                     const format =
                         indent() +
-                        color('checkmark', '  ' + Base.symbols.ok) +
+                        color('checkmark', ' ' + Base.symbols.ok) +
                         color('pass', ' %s') +
                         color(test.speed!, ' (%dms)');
                     Base.consoleLog(format, test.title, test.duration);
                 }
             })
             .on(EVENT_TEST_FAIL, (test) => {
-                Base.consoleLog(indent() + color('fail', '  %d) %s'), ++n, test.title);
+                debugLog(`====================================== EVENT_TEST_FAIL`);
+                debugLog({test, id: (test as any)[mochaIdKey]});
+                Base.consoleLog(indent() + color('fail', '%d) %s'), ++n, test.title);
             })
             .once(EVENT_RUN_END, (...args) => {
+                debugLog(`====================================== EVENT_RUN_END`);
+                debugLog({args, id: (args as any)[mochaIdKey]});
                 this.finalMessage(...args);
             });
     }

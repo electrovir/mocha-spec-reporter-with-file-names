@@ -2,11 +2,13 @@ import {assert} from 'chai';
 import {describe} from 'mocha';
 
 describe('my describe description 1', () => {
-    it('should pass', () => {
-        assert.isTrue(true);
-    });
-    it('should fail 1', () => {
-        assert.isFalse(true);
+    describe('nested describe', () => {
+        it('should pass', () => {
+            assert.isTrue(true);
+        });
+        it('should fail 1', () => {
+            assert.isFalse(true);
+        });
     });
 });
 
