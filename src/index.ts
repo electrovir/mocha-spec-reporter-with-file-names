@@ -111,7 +111,8 @@ export class SpecReporterWithFileNames extends Base {
             if (!suite.id) {
                 suite.id = suite[mochaIdKey];
             }
-            const suiteParent = suite.parent;
+            const suiteParent =
+                suite.parent && suites.get((suite.parent as ActualSuiteWithFile)[mochaIdKey]);
 
             const isTopDescribe = !suiteParent?.parent;
             if (isTopDescribe && !loggedFiles.has(suite.file)) {
