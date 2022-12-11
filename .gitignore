@@ -1,5 +1,6 @@
+*.tgz
+*.tsbuildinfo
 .DS_Store
-/*.tgz
 /Icon?
 coverage/
 dist/

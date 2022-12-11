@@ -74,13 +74,15 @@ function stringifyDiffObjs(err: any) {
     }
 }
 
+const mochaIdKey = '__mocha_id__' as const;
+const fileKey = 'file' as const;
+
 type ActualSuiteWithFile = {
     id: string | undefined;
-    file: string | undefined;
+} & {
+    [key in typeof fileKey]: string | undefined;
 } & WithMochaId &
     Suite;
-
-const mochaIdKey = '__mocha_id__';
 
 type WithMochaId<T extends object | unknown = unknown> = T extends object
     ? Record<typeof mochaIdKey, string> & T
@@ -105,8 +107,8 @@ export class SpecReporterWithFileNames extends Base {
         const suites = new Map<string, ActualSuiteWithFile>();
 
         function logTestSuite(suite: ActualSuiteWithFile, test: WithMochaId<Test>) {
-            if (!suite.file) {
-                suite.file = test.file;
+            if (!suite[fileKey]) {
+                suite[fileKey] = test[fileKey];
             }
             if (!suite.id) {
                 suite.id = suite[mochaIdKey];
@@ -115,14 +117,14 @@ export class SpecReporterWithFileNames extends Base {
                 suite.parent && suites.get((suite.parent as ActualSuiteWithFile)[mochaIdKey]);
 
             const isTopDescribe = !suiteParent?.parent;
-            if (isTopDescribe && !loggedFiles.has(suite.file)) {
-                loggedFiles.add(suite.file);
+            if (isTopDescribe && !loggedFiles.has(suite[fileKey])) {
+                loggedFiles.add(suite[fileKey]);
                 Base.consoleLog();
                 indents = 0;
                 Base.consoleLog(
                     color('fileName', '%s%s'),
                     indent(),
-                    relative(process.cwd(), suite.file ?? ''),
+                    relative(process.cwd(), suite[fileKey] ?? ''),
                 );
                 indents++;
             } else if (!isTopDescribe && suiteParent) {
@@ -294,8 +296,8 @@ export class SpecReporterWithFileNames extends Base {
                     testTitle += '  ';
                 }
                 testTitle += str;
-                if (index === 0) {
-                    testTitle += ' (' + relative(process.cwd(), test.file!) + ') ';
+                if (index === 0 && test[fileKey]) {
+                    testTitle += ' (' + relative(process.cwd(), test[fileKey]) + ') ';
                 }
             });
 

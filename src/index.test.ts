@@ -1,7 +1,7 @@
 import {removeColor} from 'augment-vir';
 import {runShellCommand, toPosixPath} from 'augment-vir/dist/cjs/node-only';
 import {assert} from 'chai';
-import {dirname, join} from 'path';
+import {basename, dirname, join} from 'path';
 
 const repoDirPath = dirname(__dirname);
 
@@ -19,7 +19,7 @@ function filterOutput(rawOutput: string): string {
     );
 }
 
-describe(__filename, () => {
+describe(basename(__filename), () => {
     it('should match output for copied files', async () => {
         const output = await runShellCommand(`npm test -s`, {
             cwd: join(repoDirPath, 'test-files', 'copied-test-file'),
@@ -94,6 +94,14 @@ src/copied-tests.test.ts
       -true
       +false
       
+
+
+
+
+
+
+
+
 
 
 
